@@ -97,8 +97,6 @@ func main() {
 	}
 	ctx = context.WithValue(ctx, config.AppConfigContextVar, cfg)
 
-	log.Infof("%#v", cfg.Etcd)
-
 	log.SetLevel(cfg.Logging.Level.Level)
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:    cfg.Logging.FullTimestamp,
