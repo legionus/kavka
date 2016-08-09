@@ -81,11 +81,38 @@ func (d *driver) Reader(dgst digest.Digest) (io.ReadCloser, error) {
 
 func (d *driver) Write(blob storage.Blob) (digest.Digest, error) {
 	dgst := digest.FromBytes(blob)
-	err := d.db.Put([]byte(dgst), blob, &opt.WriteOptions{Sync: true})
 
-	return dgst, err
+	batch := &leveldb.Batch{}
+	batch.Put([]byte(dgst), blob)
+	batch.Put([]byte("size:"+dgst.String()), []byte(fmt.Sprintf("%d", len(blob))))
+
+	transaction, err := d.db.OpenTransaction()
+	if err != nil {
+		return dgst, err
+	}
+
+	if err := transaction.Write(batch, &opt.WriteOptions{Sync: true}); err != nil {
+		transaction.Discard()
+		return dgst, err
+	}
+
+	return dgst, transaction.Commit()
 }
 
 func (d *driver) Delete(dgst digest.Digest) error {
-	return d.db.Delete([]byte(dgst), nil)
+	batch := &leveldb.Batch{}
+	batch.Delete([]byte(dgst))
+	batch.Delete([]byte("size:"+dgst.String()))
+
+	transaction, err := d.db.OpenTransaction()
+	if err != nil {
+		return err
+	}
+
+	if err := transaction.Write(batch, &opt.WriteOptions{Sync: true}); err != nil {
+		transaction.Discard()
+		return err
+	}
+
+	return transaction.Commit()
 }
