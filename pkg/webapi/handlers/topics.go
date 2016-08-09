@@ -289,6 +289,10 @@ func uploadBlobs(ctx context.Context, reader io.Reader) ([]string, error) {
 
 		_, err = st.Write(chunk.Bytes())
 		if err != nil {
+			if err == storage.ErrBlobExists {
+				topicValue = append(topicValue, dgst.String())
+				continue
+			}
 			return nil, err
 		}
 

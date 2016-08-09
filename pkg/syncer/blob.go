@@ -71,13 +71,13 @@ func SyncBlob(ctx context.Context, dgst digest.Digest) error {
 			continue
 		}
 
-		if err == nil {
-			logrus.Infof("sync %s from remote server %s", dgst.String(), key.Host)
-		} else {
+		if err != nil && err != storage.ErrBlobExists {
 			logrus.Errorf("unable to write blob %s: %v", dgst.String(), err)
+			return err
 		}
 
-		return err
+		logrus.Infof("sync %s from remote server %s", dgst.String(), key.Host)
+		return nil
 	}
 
 	return fmt.Errorf("unable to sync %s", dgst.String())
