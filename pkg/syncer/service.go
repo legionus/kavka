@@ -51,8 +51,10 @@ func RunSyncer(ctx context.Context) error {
 
 			if has, err := st.Has(dgst); err != nil {
 				logrus.Error(err)
+				<-pool
 				return
 			} else if has {
+				<-pool
 				return
 			}
 
