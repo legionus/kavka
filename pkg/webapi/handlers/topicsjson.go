@@ -8,19 +8,18 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/legionus/kavka/pkg/config"
 	"github.com/legionus/kavka/pkg/context"
+	"github.com/legionus/kavka/pkg/message"
 	"github.com/legionus/kavka/pkg/metadata"
-	"github.com/legionus/kavka/pkg/storage"
-	"github.com/legionus/kavka/pkg/syncer"
 	"github.com/legionus/kavka/pkg/util"
 	"github.com/legionus/kavka/pkg/webapi"
 )
 
 func jsonGetHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	// TODO: use webapi.IsAlive to cancel context
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -32,11 +31,6 @@ func jsonGetHandler(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	cfg, ok := ctx.Value(config.AppConfigContextVar).(*config.Config)
 	if !ok {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "Unable to obtain config from context")
-		return
-	}
-	st, ok := ctx.Value(storage.AppStorageDriverContextVar).(storage.StorageDriver)
-	if !ok {
-		webapi.HTTPResponse(w, http.StatusInternalServerError, "Unable to obtain params from context")
 		return
 	}
 
@@ -110,9 +104,11 @@ func jsonGetHandler(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	successSent := false
 
 	for _, msg := range mataRange {
-		parts := strings.Split(msg.Value, ",")
+		if !webapi.IsAlive(w) {
+			return
+		}
 
-		chunks, err := syncer.SyncBlobSeries(ctx, parts)
+		data, err := message.ParseMessageInfo(msg.Value)
 		if err != nil {
 			webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 			return
@@ -129,18 +125,8 @@ func jsonGetHandler(ctx context.Context, w http.ResponseWriter, r *http.Request)
 			w.Write([]byte(`,`))
 		}
 
-		for _, chunk := range chunks {
-			if !webapi.IsAlive(w) {
-				return
-			}
-
-			blob, err := st.Read(chunk)
-			if err != nil {
-				webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
-				return
-			}
-
-			w.Write(blob)
+		if err := data.CopyOut(ctx, w); err != nil {
+			webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		}
 	}
 
@@ -205,7 +191,6 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-
 	msg, err := ioutil.ReadAll(stream)
 	if err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "Unable to read body: %s", err)
@@ -218,17 +203,21 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	topicValue, err := uploadBlobs(ctx, bytes.NewReader(msg))
-	if err != nil {
+	topicValue := &message.MessageInfo{
+		CreationTime: nowValue,
+	}
+
+	if err := topicValue.CopyIn(ctx, bytes.NewReader(msg)); err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		return
 	}
 
-	res, err := queuesColl.Create(&metadata.QueueEtcdKey{
-		Topic:     p.Get("topic"),
-		Partition: util.ToInt64(p.Get("partition")),
-	},
-		strings.Join(topicValue, ","),
+	res, err := queuesColl.Create(
+		&metadata.QueueEtcdKey{
+			Topic:     p.Get("topic"),
+			Partition: util.ToInt64(p.Get("partition")),
+		},
+		topicValue.String(),
 	)
 	if err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)

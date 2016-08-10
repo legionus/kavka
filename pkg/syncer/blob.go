@@ -83,24 +83,17 @@ func SyncBlob(ctx context.Context, dgst digest.Digest) error {
 	return fmt.Errorf("unable to sync %s", dgst.String())
 }
 
-func SyncBlobSeries(ctx context.Context, parts []string) ([]digest.Digest, error) {
+func SyncBlobSeries(ctx context.Context, blobs []storage.Descriptor) error {
 	st, ok := ctx.Value(storage.AppStorageDriverContextVar).(storage.StorageDriver)
 	if !ok {
-		return nil, fmt.Errorf("unable to obtain storage driver from context")
+		return fmt.Errorf("unable to obtain storage driver from context")
 	}
 
-	chunks := make([]digest.Digest, len(parts))
-	errors := make([]error, len(parts))
+	errors := make([]error, len(blobs))
 
 	var wg sync.WaitGroup
 
-	for i, chunk := range parts {
-		dgst, err := digest.ParseDigest(chunk)
-		if err != nil {
-			return nil, fmt.Errorf("Bad digest '%s': %v", chunk, err)
-		}
-		chunks[i] = dgst
-
+	for i, chunk := range blobs {
 		wg.Add(1)
 
 		go func(i int, dgst digest.Digest) {
@@ -113,15 +106,15 @@ func SyncBlobSeries(ctx context.Context, parts []string) ([]digest.Digest, error
 				return
 			}
 			errors[i] = SyncBlob(ctx, dgst)
-		}(i, dgst)
+		}(i, chunk.Digest)
 	}
 	wg.Wait()
 
 	for _, err := range errors {
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return chunks, nil
+	return nil
 }
