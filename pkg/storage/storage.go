@@ -35,6 +35,7 @@ var (
 type StorageDriver interface {
 	Name() string
 	Has(digest.Digest) (bool, error)
+	Stat(digest.Digest) (Descriptor, error)
 	Read(digest.Digest) (Blob, error)
 	Reader(digest.Digest) (io.ReadCloser, error)
 	Write(Blob) (digest.Digest, error)

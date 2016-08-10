@@ -46,6 +46,21 @@ func (d *driver) Has(dgst digest.Digest) (bool, error) {
 	return ok, nil
 }
 
+func (d *driver) Stat(dgst digest.Digest) (storage.Descriptor, error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	v, ok := d.data[dgst]
+	if !ok {
+		return storage.Descriptor{}, storage.ErrBlobUnknown
+	}
+
+	return storage.Descriptor{
+		Digest: dgst,
+		Size:   int64(len(v)),
+	}, nil
+}
+
 func (d *driver) Read(dgst digest.Digest) (storage.Blob, error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()

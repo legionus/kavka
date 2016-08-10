@@ -11,6 +11,7 @@ import (
 	"github.com/legionus/kavka/pkg/digest"
 	"github.com/legionus/kavka/pkg/storage"
 	"github.com/legionus/kavka/pkg/storage/factory"
+	"github.com/legionus/kavka/pkg/util"
 )
 
 const driverName = "goleveldb"
@@ -51,6 +52,26 @@ func (d *driver) Close() error {
 
 func (d *driver) Has(dgst digest.Digest) (bool, error) {
 	return d.db.Has([]byte(dgst), nil)
+}
+
+func (d *driver) Stat(dgst digest.Digest) (storage.Descriptor, error) {
+	desc := storage.Descriptor{
+		Digest: dgst,
+	}
+
+	if has, err := d.Has(dgst); err != nil {
+		return desc, err
+	} else if !has {
+		return desc, storage.ErrBlobUnknown
+	}
+
+	v, err := d.db.Get([]byte("size:"+dgst.String()), nil)
+	if err != nil {
+		return desc, err
+	}
+
+	desc.Size = util.ToInt64(string(v))
+	return desc, nil
 }
 
 func (d *driver) Read(dgst digest.Digest) (storage.Blob, error) {
