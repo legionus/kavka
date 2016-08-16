@@ -5,6 +5,7 @@ global:
 logging:
   level: debug
 storage:
+  cleanup-period: 5sm
   syncpool: 5
   maxmessagesize: 0
   chunksize: 1024

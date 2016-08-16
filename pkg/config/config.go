@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -75,6 +76,8 @@ type Storage struct {
 	SyncPool int
 	// Driver
 	Driver StorageDriver
+	// CleanupPeriod sets time period between cleanup iterations.
+	CleanupPeriod time.Duration `yaml:"cleanup-period"`
 }
 
 type EtcdURLs struct {
