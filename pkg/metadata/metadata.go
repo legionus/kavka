@@ -31,4 +31,5 @@ type EtcdCollection interface {
 type EtcdValue struct {
 	RawKey string
 	Value  string
+	Count  int64
 }

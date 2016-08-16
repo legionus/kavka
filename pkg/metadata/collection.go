@@ -43,6 +43,7 @@ func (b *baseCollection) List(key EtcdKey) ([]EtcdValue, error) {
 	for i, v := range resp.Kvs {
 		res[i].RawKey = string(v.Key)
 		res[i].Value = string(v.Value)
+		res[i].Count = resp.Count
 	}
 
 	return res, nil
@@ -66,12 +67,16 @@ func (b *baseCollection) ListRange(firstKey EtcdKey, lastKey EtcdKey) ([]EtcdVal
 	for i, v := range resp.Kvs {
 		res[i].RawKey = string(v.Key)
 		res[i].Value = string(v.Value)
+		res[i].Count = resp.Count
 	}
 
 	return res, nil
 }
 
 func (b *baseCollection) Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error) {
+	// FIXME
+	countOnly := false
+
 	var ops []v3.OpOption
 
 	for _, opt := range opts {
@@ -85,6 +90,7 @@ func (b *baseCollection) Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error)
 				ops = append(ops, v)
 			}
 		case CountKey:
+			countOnly = true
 			ops = append(ops, v3.WithCountOnly())
 		}
 	}
@@ -94,6 +100,12 @@ func (b *baseCollection) Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error)
 		return nil, err
 	}
 
+	if countOnly {
+		return &EtcdValue{
+			Count: resp.Count,
+		}, nil
+	}
+
 	if resp.Count == 0 {
 		return nil, ErrKeyNotFound
 	}
@@ -101,6 +113,7 @@ func (b *baseCollection) Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error)
 	return &EtcdValue{
 		RawKey: string(resp.Kvs[0].Key),
 		Value:  string(resp.Kvs[0].Value),
+		Count:  resp.Count,
 	}, nil
 }
 
