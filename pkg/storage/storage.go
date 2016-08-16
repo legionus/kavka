@@ -22,6 +22,7 @@ type Descriptor struct {
 	Size int64 `json:"size,omitempty"`
 }
 
+type Key string
 type Blob []byte
 
 var (
@@ -40,5 +41,6 @@ type StorageDriver interface {
 	Reader(digest.Digest) (io.ReadCloser, error)
 	Write(Blob) (digest.Digest, error)
 	Delete(digest.Digest) error
+	Iterate(handler func(Key, Blob) (bool, error)) error
 	Close() error
 }

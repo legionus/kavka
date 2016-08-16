@@ -110,3 +110,21 @@ func (d *driver) Delete(dgst digest.Digest) error {
 	delete(d.data, dgst)
 	return nil
 }
+
+func (d *driver) Iterate(handler func(k storage.Key, v storage.Blob) (bool, error)) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	for k, v := range d.data {
+		finish, err := handler(storage.Key(k), v)
+
+		if err != nil {
+			return err
+		}
+
+		if finish {
+			break
+		}
+	}
+	return nil
+}

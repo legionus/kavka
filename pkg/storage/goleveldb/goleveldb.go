@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -136,4 +137,35 @@ func (d *driver) Delete(dgst digest.Digest) error {
 	}
 
 	return transaction.Commit()
+}
+
+func (d *driver) Iterate(handler func(k storage.Key, v storage.Blob) (bool, error)) error {
+	s, err := d.db.GetSnapshot()
+	if err != nil {
+		return err
+	}
+	defer s.Release()
+
+	iter := d.db.NewIterator(nil, nil)
+	defer iter.Release()
+
+	for iter.Next() {
+		key := storage.Key(iter.Key())
+
+		if strings.HasPrefix(string(key), "size:") {
+			continue
+		}
+
+		finish, err := handler(key, iter.Value())
+
+		if err != nil {
+			return err
+		}
+
+		if finish {
+			break
+		}
+	}
+
+	return iter.Error()
 }
