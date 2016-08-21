@@ -61,10 +61,10 @@ func etcdAddHandler(ctx context.Context, w http.ResponseWriter, r *http.Request)
 
 	var stream io.Reader = r.Body
 
-	if cfg.Storage.MaxMessageSize > 0 {
+	if cfg.Topic.MaxMessageSize > 0 {
 		stream = &io.LimitedReader{
 			R: r.Body,
-			N: cfg.Storage.MaxMessageSize,
+			N: cfg.Topic.MaxMessageSize,
 		}
 	}
 
@@ -124,10 +124,10 @@ func etcdUpdateHandler(ctx context.Context, w http.ResponseWriter, r *http.Reque
 
 	var stream io.Reader = r.Body
 
-	if cfg.Storage.MaxMessageSize > 0 {
+	if cfg.Topic.MaxMessageSize > 0 {
 		stream = &io.LimitedReader{
 			R: r.Body,
-			N: cfg.Storage.MaxMessageSize,
+			N: cfg.Topic.MaxMessageSize,
 		}
 	}
 

@@ -169,10 +169,10 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 	var stream io.Reader = r.Body
 
-	if cfg.Storage.MaxMessageSize > 0 {
+	if cfg.Topic.MaxMessageSize > 0 {
 		stream = &io.LimitedReader{
 			R: r.Body,
-			N: cfg.Storage.MaxMessageSize,
+			N: cfg.Topic.MaxMessageSize,
 		}
 	}
 
@@ -182,7 +182,7 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		Partition: util.ToInt64(p.Get("partition")),
 	}
 
-	if err := hasKey(topicsColl, topicKey, nowValue, cfg.Storage.AllowTopicsCreation); err != nil {
+	if err := hasKey(topicsColl, topicKey, nowValue, cfg.Topic.AllowTopicsCreation); err != nil {
 		if err != metadata.ErrKeyNotFound {
 			webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		} else {

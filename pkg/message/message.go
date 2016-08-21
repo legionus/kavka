@@ -135,7 +135,7 @@ func (d *MessageInfo) CopyIn(ctx context.Context, r io.Reader) error {
 			replic[resKey.Digest]++
 		}
 
-		if replic[resKey.Digest] == cfg.Storage.WriteConcern {
+		if replic[resKey.Digest] == cfg.Topic.WriteConcern {
 			wg.Done()
 		}
 	})
@@ -151,7 +151,7 @@ func (d *MessageInfo) CopyIn(ctx context.Context, r io.Reader) error {
 	for errIO != io.EOF {
 		chunk := bytes.NewBuffer(nil)
 
-		_, errIO = io.CopyN(chunk, r, cfg.Storage.ChunkSize)
+		_, errIO = io.CopyN(chunk, r, cfg.Topic.MaxChunkSize)
 
 		if errIO != nil && errIO != io.EOF {
 			return errIO

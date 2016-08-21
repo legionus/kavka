@@ -41,6 +41,18 @@ type Global struct {
 	Port int
 }
 
+type Topic struct {
+	// AllowTopicsCreation enables auto creation of topic on the server
+	AllowTopicsCreation bool `yaml:"allow-topics-creation"`
+	// WriteConcern describes the number of groups, which should confirm write of each block.
+	// This value should not be more than the number of nodes in the cluster.
+	WriteConcern int64 `yaml:"write-concern"`
+	// MaxMessageSize defines maximum size of incoming message. Set 0 to disable.
+	MaxMessageSize int64 `yaml:"max-message-size"`
+	// ChunkSize defines maximum size of a block on which is divided the incoming message.
+	MaxChunkSize int64 `yaml:"max-chunk-size"`
+}
+
 type Logging struct {
 	Level            CfgLogLevel
 	DisableColors    bool
@@ -63,15 +75,6 @@ func (s StorageDriver) Parameters() storage.StorageDriverParameters {
 }
 
 type Storage struct {
-	// AllowTopicsCreation enables auto creation of topic on the server
-	AllowTopicsCreation bool
-	// MaxMessageSize defines maximum size of incoming message. Set 0 to disable.
-	MaxMessageSize int64
-	// ChunkSize defines maximum size of a block on which is divided the incoming message.
-	ChunkSize int64
-	// WriteConcern describes the number of groups, which should confirm write of each block.
-	// This value should not be more than the number of nodes in the cluster.
-	WriteConcern int64
 	// SyncPool specifies the number of concurrent processes synchronization chunks from other servers.
 	SyncPool int
 	// Driver
@@ -128,6 +131,7 @@ type Etcd struct {
 type Config struct {
 	Global  Global
 	Logging Logging
+	Topic   Topic
 	Storage Storage
 	Etcd    Etcd
 }
@@ -143,8 +147,9 @@ func (c *Config) SetDefaults() *Config {
 	c.Global.Group = hostname
 	c.Global.Logfile = "/var/log/kavka.log"
 
-	c.Storage.ChunkSize = int64(1024)
-	c.Storage.WriteConcern = 1
+	c.Topic.MaxChunkSize = int64(1024)
+	c.Topic.WriteConcern = 1
+
 	c.Storage.SyncPool = 10
 
 	c.Logging.Level.Level = logrus.InfoLevel
