@@ -32,8 +32,21 @@ func (b *baseCollection) Client() *etcd.EtcdClient {
 	return b.client
 }
 
-func (b *baseCollection) List(key EtcdKey) ([]EtcdValue, error) {
-	resp, err := b.client.Get(b.ctx, key.String()+"/", v3.WithPrefix())
+func (b *baseCollection) List(key EtcdKey, opts ...ListOption) ([]EtcdValue, error) {
+	var ops []v3.OpOption
+
+	ops = append(ops, v3.WithPrefix())
+
+	for _, opt := range opts {
+		switch opt {
+		case SortAscend:
+			ops = append(ops, v3.WithSort(v3.SortByKey, v3.SortAscend))
+		case SortDescend:
+			ops = append(ops, v3.WithSort(v3.SortByKey, v3.SortDescend))
+		}
+	}
+
+	resp, err := b.client.Get(b.ctx, key.String()+"/", ops...)
 	if err != nil {
 		return nil, err
 	}
