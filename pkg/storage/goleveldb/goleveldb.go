@@ -124,7 +124,7 @@ func (d *driver) Write(blob storage.Blob) (digest.Digest, error) {
 func (d *driver) Delete(dgst digest.Digest) error {
 	batch := &leveldb.Batch{}
 	batch.Delete([]byte(dgst))
-	batch.Delete([]byte("size:"+dgst.String()))
+	batch.Delete([]byte("size:" + dgst.String()))
 
 	transaction, err := d.db.OpenTransaction()
 	if err != nil {

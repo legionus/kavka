@@ -2,8 +2,8 @@ package syncer
 
 import (
 	"fmt"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 
