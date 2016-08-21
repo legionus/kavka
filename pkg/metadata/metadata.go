@@ -30,6 +30,7 @@ type EtcdCollection interface {
 	Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error)
 	Create(key EtcdKey, value string) (EtcdKey, error)
 	Put(key EtcdKey, value string) error
+	Delete(key EtcdKey) error
 }
 
 type EtcdValue struct {

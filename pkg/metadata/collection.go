@@ -142,3 +142,8 @@ func (b *baseCollection) Create(key EtcdKey, value string) (EtcdKey, error) {
 	}
 	return key, nil
 }
+
+func (b *baseCollection) Delete(key EtcdKey) (err error) {
+	_, err = b.client.Delete(b.ctx, key.String())
+	return
+}
