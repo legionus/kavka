@@ -224,10 +224,7 @@ func (d *MessageInfo) MakeRefs(ctx context.Context, topic string, partition int6
 		return fmt.Errorf("Unable to obtain config from context")
 	}
 
-	refsColl, err := metadata.NewRefsCollection(ctx, cfg)
-	if err != nil {
-		return err
-	}
+	txn := metadata.NewTransaction(ctx, cfg)
 
 	ref := &metadata.RefsEtcdKey{
 		Topic:     topic,
@@ -239,11 +236,68 @@ func (d *MessageInfo) MakeRefs(ctx context.Context, topic string, partition int6
 		ref.Order = int64(i)
 		ref.Digest = chunk.Digest
 
-		_, err = refsColl.Create(ref, time.Now().String())
+		txn.Put(ref, time.Now().String())
+	}
+
+	return txn.Commit()
+}
+
+func (d *MessageInfo) RemoveRefs(ctx context.Context, topic string, partition int64) error {
+	cfg, ok := ctx.Value(config.AppConfigContextVar).(*config.Config)
+	if !ok {
+		return fmt.Errorf("Unable to obtain config from context")
+	}
+
+	txn := metadata.NewTransaction(ctx, cfg)
+
+	ref := &metadata.RefsEtcdKey{
+		Topic:     topic,
+		Partition: partition,
+		ID:        d.ID,
+	}
+
+	for i, chunk := range d.Blobs {
+		ref.Order = int64(i)
+		ref.Digest = chunk.Digest
+
+		txn.Delete(ref)
+	}
+
+	return txn.Commit()
+}
+
+func (d *MessageInfo) Delete(ctx context.Context) error {
+	cfg, ok := ctx.Value(config.AppConfigContextVar).(*config.Config)
+	if !ok {
+		return fmt.Errorf("Unable to obtain config from context")
+	}
+
+	st, ok := ctx.Value(storage.AppStorageDriverContextVar).(storage.StorageDriver)
+	if !ok {
+		return fmt.Errorf("Unable to obtain storage driver from context")
+	}
+
+	blobsColl, err := metadata.NewBlobsCollection(ctx, cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, blob := range d.Blobs {
+		if err := st.Delete(blob.Digest); err != nil {
+			if err != storage.ErrBlobUnknown {
+				return err
+			}
+		}
+		err := blobsColl.Delete(
+			&metadata.BlobEtcdKey{
+				Digest: blob.Digest,
+				Group:  cfg.Global.Group,
+				Host:   cfg.Global.Hostname,
+			},
+		)
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

@@ -9,6 +9,7 @@ topic:
   max-chunk-size: 1024
   write-concern: 1
   allow-topics-creation: true
+  message-retention-period: 15s
 storage:
   cleanup-period: 5s
   syncpool: 5

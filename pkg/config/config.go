@@ -47,10 +47,16 @@ type Topic struct {
 	// WriteConcern describes the number of groups, which should confirm write of each block.
 	// This value should not be more than the number of nodes in the cluster.
 	WriteConcern int64 `yaml:"write-concern"`
+	// MessageRetentionPeriod defines the maximum time we will retain a message.
+	MessageRetentionPeriod time.Duration `yaml:"message-retention-period"`
+	// PartitionSize defines maximum partition size.
+	MaxPartitionSize int64 `yaml:"max-partition-size"`
 	// MaxMessageSize defines maximum size of incoming message. Set 0 to disable.
 	MaxMessageSize int64 `yaml:"max-message-size"`
 	// ChunkSize defines maximum size of a block on which is divided the incoming message.
 	MaxChunkSize int64 `yaml:"max-chunk-size"`
+	// CleanupPeriod sets time period between cleanup iterations.
+	CleanupPeriod time.Duration `yaml:"cleanup-period"`
 }
 
 type Logging struct {
@@ -149,8 +155,10 @@ func (c *Config) SetDefaults() *Config {
 
 	c.Topic.MaxChunkSize = int64(1024)
 	c.Topic.WriteConcern = 1
+	c.Topic.CleanupPeriod = 1 * time.Minute
 
 	c.Storage.SyncPool = 10
+	c.Storage.CleanupPeriod = 1 * time.Minute
 
 	c.Logging.Level.Level = logrus.InfoLevel
 	c.Logging.DisableColors = true

@@ -11,6 +11,7 @@ import (
 
 	"github.com/altlinux/logfile-go"
 
+	"github.com/legionus/kavka/pkg/cleanup"
 	"github.com/legionus/kavka/pkg/config"
 	"github.com/legionus/kavka/pkg/context"
 	etcdclient "github.com/legionus/kavka/pkg/etcd"
@@ -125,6 +126,18 @@ func main() {
 
 	ctx = context.WithValue(ctx, storage.AppStorageDriverContextVar, storageDriver)
 	ctx = context.WithValue(ctx, webapi.HTTPEndpointsContextVar, handlers.Endpoints)
+
+	log.Info("Run queue cleaner")
+	_, err = cleanup.RunCleanupQueues(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//log.Info("Run storage cleaner")
+	//_, err = cleanup.RunCleanupStorage(ctx)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
 	log.Info("Run blob syncer")
 	syncer.RunSyncer(ctx)
