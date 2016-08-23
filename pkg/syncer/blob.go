@@ -76,6 +76,19 @@ func SyncBlob(ctx context.Context, dgst digest.Digest) error {
 			return err
 		}
 
+		_, err = blobsColl.Create(
+			&metadata.BlobEtcdKey{
+				Digest: dgst,
+				Group:  cfg.Global.Group,
+				Host:   cfg.Global.Hostname,
+			},
+			time.Now().String(),
+		)
+		if err != nil {
+			logrus.Errorf("unable to blob metadata %s: %v", dgst.String(), err)
+			return err
+		}
+
 		logrus.Infof("sync %s from remote server %s", dgst.String(), key.Host)
 		return nil
 	}
