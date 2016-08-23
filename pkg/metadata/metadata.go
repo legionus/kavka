@@ -16,6 +16,10 @@ const (
 
 	SortAscend ListOption = iota
 	SortDescend
+
+	NoPartition = -1
+	NoOffset    = -1
+	NoString    = ""
 )
 
 type EtcdKey interface {

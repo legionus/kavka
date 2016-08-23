@@ -8,10 +8,13 @@ import (
 	"github.com/legionus/kavka/pkg/context"
 )
 
+const (
+	ClusterObserverContextVar = "app.observer.cluster"
+	ClusterEtcd               = "/cluster"
+)
+
 var (
-	ClusterObserverContextVar string         = "app.observer.cluster"
-	ClusterEtcd               string         = "/cluster"
-	ClusterEtcdKeyRegexp      *regexp.Regexp = regexp.MustCompile("^" + ClusterEtcd + "/(?P<group>[^/]+)(/(?P<node>.+))?$")
+	clusterEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + ClusterEtcd + "/(?P<group>[^/]+)(/(?P<node>.+))?$")
 )
 
 type ClusterEtcdKey struct {
@@ -21,10 +24,10 @@ type ClusterEtcdKey struct {
 
 func (k *ClusterEtcdKey) String() (res string) {
 	res = ClusterEtcd
-	if k.Group != "" {
+	if k.Group != NoString {
 		res += "/" + k.Group
 	}
-	if k.Node != "" {
+	if k.Node != NoString {
 		res += "/" + k.Node
 	}
 	return
@@ -33,7 +36,7 @@ func (k *ClusterEtcdKey) String() (res string) {
 func ParseClusterEtcdKey(value string) (*ClusterEtcdKey, error) {
 	key := &ClusterEtcdKey{}
 
-	match := ClusterEtcdKeyRegexp.FindStringSubmatch(value)
+	match := clusterEtcdKeyRegexp.FindStringSubmatch(value)
 
 	if len(match) < 1 || len(match) > 4 {
 		return key, fmt.Errorf("bad cluster key: %s", value)

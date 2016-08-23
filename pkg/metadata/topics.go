@@ -9,10 +9,13 @@ import (
 	"github.com/legionus/kavka/pkg/context"
 )
 
+const (
+	TopicsObserverContextVar = "app.observer.topics"
+	TopicsEtcd               = "/topics"
+)
+
 var (
-	TopicsObserverContextVar string         = "app.observer.topics"
-	TopicsEtcd               string         = "/topics"
-	TopicsEtcdKeyRegexp      *regexp.Regexp = regexp.MustCompile("^" + TopicsEtcd + "/(?P<topic>[A-Za-z0-9_-]+)(/(?P<partition>[0-9]+))?$")
+	topicsEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + TopicsEtcd + "/(?P<topic>[A-Za-z0-9_-]+)(/(?P<partition>[0-9]+))?$")
 )
 
 type TopicEtcdKey struct {
@@ -23,7 +26,7 @@ type TopicEtcdKey struct {
 func (k *TopicEtcdKey) String() (res string) {
 	res = TopicsEtcd
 
-	if k.Topic != "" {
+	if k.Topic != NoString {
 		res += "/" + k.Topic
 	}
 
@@ -37,7 +40,7 @@ func (k *TopicEtcdKey) String() (res string) {
 func ParseTopicEtcdKey(value string) (*TopicEtcdKey, error) {
 	key := &TopicEtcdKey{}
 
-	match := TopicsEtcdKeyRegexp.FindStringSubmatch(value)
+	match := topicsEtcdKeyRegexp.FindStringSubmatch(value)
 
 	if len(match) < 1 || len(match) > 6 {
 		return key, fmt.Errorf("bad topic key: %s: %#v", value, match)

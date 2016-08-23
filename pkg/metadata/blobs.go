@@ -9,10 +9,13 @@ import (
 	"github.com/legionus/kavka/pkg/digest"
 )
 
+const (
+	BlobsObserverContextVar = "app.observer.blobs"
+	BlobsEtcd               = "/blobs"
+)
+
 var (
-	BlobsObserverContextVar string         = "app.observer.blobs"
-	BlobsEtcd               string         = "/blobs"
-	BlobsEtcdKeyRegexp      *regexp.Regexp = regexp.MustCompile("^" + BlobsEtcd + "/(?P<digest>[a-zA-Z0-9-_+.]+:[a-fA-F0-9]+)(/(?P<group>[^/]+)(/(?P<node>.+))?)?$")
+	blobsEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + BlobsEtcd + "/(?P<digest>[a-zA-Z0-9-_+.]+:[a-fA-F0-9]+)(/(?P<group>[^/]+)(/(?P<node>.+))?)?$")
 )
 
 type BlobEtcdKey struct {
@@ -23,13 +26,13 @@ type BlobEtcdKey struct {
 
 func (k *BlobEtcdKey) String() (res string) {
 	res = BlobsEtcd
-	if k.Digest != "" {
+	if k.Digest != NoString {
 		res += "/" + k.Digest.String()
 	}
-	if k.Group != "" {
+	if k.Group != NoString {
 		res += "/" + k.Group
 	}
-	if k.Host != "" {
+	if k.Host != NoString {
 		res += "/" + k.Host
 	}
 	return
@@ -38,7 +41,7 @@ func (k *BlobEtcdKey) String() (res string) {
 func ParseBlobsEtcdKey(value string) (*BlobEtcdKey, error) {
 	key := &BlobEtcdKey{}
 
-	match := BlobsEtcdKeyRegexp.FindStringSubmatch(value)
+	match := blobsEtcdKeyRegexp.FindStringSubmatch(value)
 
 	if len(match) < 1 || len(match) > 6 {
 		return key, fmt.Errorf("bad blob key: %s", value)

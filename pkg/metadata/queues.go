@@ -10,13 +10,13 @@ import (
 	"github.com/legionus/kavka/pkg/etcd"
 )
 
-var (
-	NoPartition int64 = -1
-	NoOffset    int64 = -1
+const (
+	QueuesObserverContextVar = "app.observer.queues"
+	QueuesEtcd               = "/queues"
+)
 
-	QueuesObserverContextVar string         = "app.observer.queues"
-	QueuesEtcd               string         = "/queues"
-	QueuesEtcdKeyRegexp      *regexp.Regexp = regexp.MustCompile("^" + QueuesEtcd + "/(?P<topic>[A-Za-z0-9_-]+)(/(?P<partition>[0-9]+)(/(?P<offset>[0-9]+))?)?$")
+var (
+	queuesEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + QueuesEtcd + "/(?P<topic>[A-Za-z0-9_-]+)(/(?P<partition>[0-9]+)(/(?P<offset>[0-9]+))?)?$")
 )
 
 type QueueEtcdKey struct {
@@ -28,7 +28,7 @@ type QueueEtcdKey struct {
 func (k *QueueEtcdKey) String() (res string) {
 	res = QueuesEtcd
 
-	if k.Topic != "" {
+	if k.Topic != NoString {
 		res += "/" + k.Topic
 	}
 
@@ -46,7 +46,7 @@ func (k *QueueEtcdKey) String() (res string) {
 func ParseQueueEtcdKey(value string) (*QueueEtcdKey, error) {
 	key := &QueueEtcdKey{}
 
-	match := QueuesEtcdKeyRegexp.FindStringSubmatch(value)
+	match := queuesEtcdKeyRegexp.FindStringSubmatch(value)
 
 	if len(match) < 1 || len(match) > 6 {
 		return key, fmt.Errorf("bad topic key: %s: %#v", value, match)
