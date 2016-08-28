@@ -14,6 +14,7 @@ import (
 	"github.com/legionus/kavka/pkg/context"
 	"github.com/legionus/kavka/pkg/message"
 	"github.com/legionus/kavka/pkg/metadata"
+	"github.com/legionus/kavka/pkg/queue"
 	"github.com/legionus/kavka/pkg/util"
 	"github.com/legionus/kavka/pkg/webapi"
 )
@@ -161,12 +162,6 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	queuesColl, err := metadata.NewQueuesCollection(ctx, cfg)
-	if err != nil {
-		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
-		return
-	}
-
 	var stream io.Reader = r.Body
 
 	if cfg.Topic.MaxMessageSize > 0 {
@@ -212,18 +207,12 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	res, err := queuesColl.Create(
-		&metadata.QueueEtcdKey{
-			Topic:     p.Get("topic"),
-			Partition: util.ToInt64(p.Get("partition")),
-		},
-		topicValue.String(),
-	)
+	rec, err := queue.CreateQueue(ctx, p.Get("topic"), util.ToInt64(p.Get("partition")), topicValue)
 	if err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		return
 	}
-	rec := res.(*metadata.QueueEtcdKey)
+
 	out := fmt.Sprintf("{topic: %q, partition: %d, offset: %d}", rec.Topic, rec.Partition, rec.Offset)
 	w.Write([]byte(out))
 }
