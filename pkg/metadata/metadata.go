@@ -19,6 +19,7 @@ const (
 
 	NoPartition = -1
 	NoOffset    = -1
+	NoOrder     = -1
 	NoString    = ""
 )
 
