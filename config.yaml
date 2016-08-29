@@ -4,13 +4,13 @@ global:
   logfile: /dev/stderr
 logging:
   level: debug
-Topic:
+topic:
   max-message-size: 0
   max-chunk-size: 1024
   write-concern: 1
   allow-topics-creation: true
 storage:
-  cleanup-period: 5sm
+  cleanup-period: 5s
   syncpool: 5
 # driver:
 #   inmemory: {}
