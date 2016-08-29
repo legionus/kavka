@@ -27,6 +27,9 @@ func CreateQueue(ctx context.Context, topic string, partition int64, msg *messag
 		},
 		msg.String(),
 	)
+	if err != nil {
+		return nil, err
+	}
 
-	return res.(*metadata.QueueEtcdKey), err
+	return res.(*metadata.QueueEtcdKey), nil
 }

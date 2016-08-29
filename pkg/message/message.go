@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pborman/uuid"
 
 	"github.com/legionus/kavka/pkg/config"
 	"github.com/legionus/kavka/pkg/context"
@@ -23,8 +24,15 @@ const (
 	copyChunk = 128
 )
 
+func NewMessageInfo() *MessageInfo {
+	return &MessageInfo{
+		ID:           uuid.New(),
+		CreationTime: time.Now().String(),
+	}
+}
+
 func ParseMessageInfo(data string) (*MessageInfo, error) {
-	res := &MessageInfo{}
+	res := NewMessageInfo()
 
 	if err := json.Unmarshal([]byte(data), res); err != nil {
 		return nil, err
@@ -33,6 +41,7 @@ func ParseMessageInfo(data string) (*MessageInfo, error) {
 }
 
 type MessageInfo struct {
+	ID           string               `json:"id"`
 	CreationTime string               `json:"creation-time"`
 	Blobs        []storage.Descriptor `json:"blobs"`
 }
@@ -205,6 +214,36 @@ func (d *MessageInfo) CopyIn(ctx context.Context, r io.Reader) error {
 
 	wg.Wait()
 	bf.Stop()
+
+	return nil
+}
+
+func (d *MessageInfo) MakeRefs(ctx context.Context, topic string, partition int64) error {
+	cfg, ok := ctx.Value(config.AppConfigContextVar).(*config.Config)
+	if !ok {
+		return fmt.Errorf("Unable to obtain config from context")
+	}
+
+	refsColl, err := metadata.NewRefsCollection(ctx, cfg)
+	if err != nil {
+		return err
+	}
+
+	ref := &metadata.RefsEtcdKey{
+		Topic:     topic,
+		Partition: partition,
+		ID:        d.ID,
+	}
+
+	for i, chunk := range d.Blobs {
+		ref.Order = int64(i)
+		ref.Digest = chunk.Digest
+
+		_, err = refsColl.Create(ref, time.Now().String())
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

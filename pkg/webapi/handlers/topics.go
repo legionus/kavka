@@ -118,13 +118,12 @@ func topicPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	nowValue := fmt.Sprintf("%s", time.Now())
 	topicKey := &metadata.TopicEtcdKey{
 		Topic:     p.Get("topic"),
 		Partition: util.ToInt64(p.Get("partition")),
 	}
 
-	if err := hasKey(topicsColl, topicKey, nowValue, cfg.Topic.AllowTopicsCreation); err != nil {
+	if err := hasKey(topicsColl, topicKey, time.Now().String(), cfg.Topic.AllowTopicsCreation); err != nil {
 		if err != metadata.ErrKeyNotFound {
 			webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		} else {
@@ -133,16 +132,19 @@ func topicPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	topicValue := &message.MessageInfo{
-		CreationTime: nowValue,
-	}
+	topicValue := message.NewMessageInfo()
 
 	if err := topicValue.CopyIn(ctx, stream); err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		return
 	}
 
-	rec, err := queue.CreateQueue(ctx, p.Get("topic"), util.ToInt64(p.Get("partition")), topicValue)
+	if err := topicValue.MakeRefs(ctx, topicKey.Topic, topicKey.Partition); err != nil {
+		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
+		return
+	}
+
+	rec, err := queue.CreateQueue(ctx, topicKey.Topic, topicKey.Partition, topicValue)
 	if err != nil {
 		webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		return

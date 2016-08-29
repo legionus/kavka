@@ -16,14 +16,14 @@ const (
 )
 
 var (
-	refsEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + RefsEtcd + "/(?P<digest>[^/]+)(/(?P<topic>[^/]+)(/(?P<partition>[^/]+)(/(?P<offset>[^/]+)(/(?P<order>[^/]+))?)?)?)?$")
+	refsEtcdKeyRegexp *regexp.Regexp = regexp.MustCompile("^" + RefsEtcd + "/(?P<digest>[^/]+)(/(?P<topic>[^/]+)(/(?P<partition>[0-9]+)(/(?P<id>[^/]+)(/(?P<order>[0-9]+))?)?)?)?$")
 )
 
 type RefsEtcdKey struct {
 	Digest    digest.Digest `json:"digest"`
 	Topic     string        `json:"topic"`
 	Partition int64         `json:"partition"`
-	Offset    int64         `json:"offset"`
+	ID        string        `json:"id"`
 	Order     int64         `json:"order"`
 }
 
@@ -38,8 +38,8 @@ func (k *RefsEtcdKey) String() (res string) {
 	if k.Partition > NoPartition {
 		res += fmt.Sprintf("/%d", k.Partition)
 	}
-	if k.Offset > NoOffset {
-		res += fmt.Sprintf("/%020d", k.Offset)
+	if k.ID != NoString {
+		res += "/" + k.ID
 	}
 	if k.Order > NoOrder {
 		res += fmt.Sprintf("/%020d", k.Order)
@@ -80,13 +80,7 @@ func ParseRefsEtcdKey(value string) (*RefsEtcdKey, error) {
 	}
 
 	if len(match) > 7 {
-		key.Offset, err = strconv.ParseInt(match[7], 10, 64)
-
-		if err != nil {
-			return key, err
-		}
-	} else {
-		key.Offset = NoOffset
+		key.ID = match[7]
 	}
 
 	if len(match) > 9 {
