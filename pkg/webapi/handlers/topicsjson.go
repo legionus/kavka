@@ -180,7 +180,7 @@ func jsonPostHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		if err != metadata.ErrKeyNotFound {
 			webapi.HTTPResponse(w, http.StatusInternalServerError, "%s", err)
 		} else {
-			webapi.HTTPResponse(w, http.StatusBadRequest, "%s", err)
+			webapi.HTTPResponse(w, http.StatusBadRequest, "creating partitions is prohibited")
 		}
 		return
 	}
