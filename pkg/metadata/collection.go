@@ -95,13 +95,9 @@ func (b *baseCollection) Get(key EtcdKey, opts ...GetOption) (*EtcdValue, error)
 	for _, opt := range opts {
 		switch opt {
 		case FirstKey:
-			for _, v := range v3.WithFirstKey() {
-				ops = append(ops, v)
-			}
+			ops = append(ops, v3.WithFirstKey()...)
 		case LastKey:
-			for _, v := range v3.WithLastKey() {
-				ops = append(ops, v)
-			}
+			ops = append(ops, v3.WithLastKey()...)
 		case CountKey:
 			countOnly = true
 			ops = append(ops, v3.WithCountOnly())
