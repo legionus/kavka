@@ -120,6 +120,9 @@ type Etcd struct {
 	// StorageDir indicates where to save the etcd data
 	StorageDir string `yaml:"storage-dir"`
 
+	MinConnections int64
+	MaxConnections int64
+
 	Name                *string `yaml:"name"`
 	InitialCluster      *string `yaml:"initial-cluster"`
 	InitialClusterToken *string `yaml:"initial-cluster-token"`
@@ -159,6 +162,9 @@ func (c *Config) SetDefaults() *Config {
 
 	c.Storage.SyncPool = 10
 	c.Storage.CleanupPeriod = 1 * time.Minute
+
+	c.Etcd.MinConnections = 3
+	c.Etcd.MaxConnections = 100
 
 	c.Logging.Level.Level = logrus.InfoLevel
 	c.Logging.DisableColors = true

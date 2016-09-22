@@ -1,0 +1,62 @@
+digraph A {
+	compound=true;
+	graph[ordering="out", style="filled", nodesep=0.3, ranksep=0.5];
+	node [shape="rectangle",style="rounded,filled",fillcolor="#ffffff",fontsize=10];
+
+	nginx  [label="nginx"];
+
+	subgraph cluster_server1 {
+		label="Server A";
+
+		kavka1   [label="kavka 1", width="3"];
+		etcd1    [label="etcd node 1"]
+		storage1 [label="local storage 1"];
+
+		{etcd1; storage1; rank="same"}
+
+		kavka1->storage1 [color="#2cb203", dir="both"];
+		kavka1->etcd1    [color="#0323b2", dir="both"];
+
+		etcd1->storage1 [constraint="true", style="invis", minlen=3]
+	}
+
+	subgraph cluster_server2 {
+		label="Server B";
+
+		kavka2   [label="kavka 2", width="3"];
+		etcd2    [label="etcd node 2"]
+		storage2 [label="local storage 2"];
+
+		{etcd2; storage2; rank="same"}
+
+		kavka2->storage2 [color="#2cb203", dir="both"];
+		kavka2->etcd2    [color="#0323b2", dir="both"];
+
+		etcd2->storage2 [constraint="true", style="invis", minlen=3]
+	}
+
+	subgraph cluster_server3 {
+		label="Server C";
+
+		kavka3   [label="kavka 3", width="3"];
+		etcd3    [label="etcd node 3"]
+		storage3 [label="local storage 3"];
+
+		{etcd3; storage3; rank="same"}
+
+		kavka3->storage3 [color="#2cb203", dir="both"];
+		kavka3->etcd3    [color="#0323b2", dir="both"];
+
+		etcd3->storage3 [constraint="true", style="invis", minlen=3]
+	}
+
+	nginx->{ kavka1; kavka2; kavka3; } [dir="both"];
+
+	kavka1->kavka2 [color="#679373", dir="both"];
+	kavka1->kavka3 [constraint="false", color="#679373", dir="both"];
+	kavka2->kavka3 [constraint="false", color="#679373", dir="both"];
+
+	etcd1->etcd2 [constraint="false", color="#8d8d8d", dir="both"];
+	etcd2->etcd3 [constraint="false", color="#8d8d8d", dir="both"];
+	//etcd1->etcd3 [constraint="false", color="#8d8d8d", dir="both"];
+}
